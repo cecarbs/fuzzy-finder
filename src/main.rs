@@ -1,38 +1,75 @@
-use std::fs;
-use fuzzy_matcher::FuzzyMatcher;
+use clap::{Args, Parser, Subcommand};
+use indicatif::{ProgressBar, ProgressStyle, Style};
+use nucleo::Matcher;
+use std::fs::{read_dir, DirEntry};
+use std::path::PathBuf;
 
-fn fuzzy_find_files(root_dir: &str, query: &str ) -> Vec<String> {
-    let mut matches = Vec::new();
-    let matcher = FuzzyMatcher::new(query);
+#[derive(Parser)]
+struct Cli {
+    #[clap(subcommand)]
+    command: Command,
+}
 
-    // Recursively walk the directory tree
-    for entry in fs::read_dir(root_dir).unwrap() {
-        let entry = entry.unwrap();
-        let path = entry.path();
-
-        // Check if it's a directory and recurse
-        if entry.file_type().unwrap().is_dir() {
-            let sub_matches = fuzzy_find_files(path_to_str().unwrap(), query)
-            matches.extend(sub_match);
-        } else {
-
-            // Check if filename matches query
-            if matcher.is_match(path.file_name().unwrap().to_str().unwrap()) {
-                matches.push(path.to_str().unwrap().to_owned())
-            }
-        }
-
-        matches
-    }
+#[derive(Subcommand)]
+enum Command {
+    /// Find directories and files containing "rust" in the path
+    Find {
+        /// Starting directory for the search
+        #[clap(short, long, default_value = ".")]
+        directory: String,
+    },
 }
 
 fn main() {
-    let root_dir = ""; //path to home
-    let query = ""; // file to search for 
-    //
-    let matches = fuzzy_find_files(root_dir, query);
-    println!("Found {} matches for query '{}' in '{}':", matches.len(), query, root_dir);
-    for match in matches {
-        println!("{}", match);
+    let cli = Cli::parse();
+
+    match cli.command {
+        Command::Find { directory } => {
+            let path = PathBuf::from(directory);
+            let matcher = Matcher::default();
+            let search_term = "rust";
+
+            let progress = ProgressBar::new(0);
+            progress.set_style(
+                ProgressStyle::new()
+                    .tick_chars("[=>-]")
+                    .template("[{elapsed_precise}] {bar} {pos}/{len}"),
+            );
+
+            progress.set_message(format!(
+                "Searching for '{}' in '{}'...",
+                search_term,
+                path.display()
+            ));
+
+            let mut matches = Vec::new();
+            let entries = match read_dir(&path) {
+                Ok(entries) => entries,
+                Err(error) => panic!("Error reading directory: {}", error),
+            };
+
+            progress.set_length(entries.count());
+            for entry in entries {
+                progress.inc(1);
+
+                if let Ok(entry) = entry {
+                    let entry_path = entry.path();
+                    if matcher
+                        .match_many(&[entry_path.to_str().unwrap()], search_term)
+                        .is_empty()
+                    {
+                        continue;
+                    }
+                    matches.push(entry_path);
+                }
+            }
+
+            progress.finish_and_clear();
+
+            println!("Found {} matches:", matches.len());
+            for match_path in matches {
+                println!("- {}", match_path.display());
+            }
+        }
     }
 }
