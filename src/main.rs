@@ -1,8 +1,10 @@
 use clap::{Args, Parser, Subcommand};
-use indicatif::{ProgressBar, ProgressStyle, Style};
+// use indicatif::{ProgressBar, ProgressStyle, Style};
+use indicatif::{ProgressBar, ProgressStyle};
 use nucleo::Matcher;
 use std::fs::{read_dir, DirEntry};
 use std::path::PathBuf;
+use std::u64;
 
 #[derive(Parser)]
 struct Cli {
@@ -31,9 +33,9 @@ fn main() {
 
             let progress = ProgressBar::new(0);
             progress.set_style(
-                ProgressStyle::new()
-                    .tick_chars("[=>-]")
-                    .template("[{elapsed_precise}] {bar} {pos}/{len}"),
+                ProgressStyle::with_template("[{elapsed_precise}] {bar} {pos}/{len}")
+                    .unwrap()
+                    .tick_chars("[=>-]"),
             );
 
             progress.set_message(format!(
@@ -48,13 +50,13 @@ fn main() {
                 Err(error) => panic!("Error reading directory: {}", error),
             };
 
-            progress.set_length(entries.count());
+            progress.set_length(entries.count() as u64);
             for entry in entries {
                 progress.inc(1);
 
                 if let Ok(entry) = entry {
                     let entry_path = entry.path();
-                    if matcher
+                    if matcher.
                         .match_many(&[entry_path.to_str().unwrap()], search_term)
                         .is_empty()
                     {
