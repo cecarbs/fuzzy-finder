@@ -9,3 +9,4 @@ edition = "2021"
 clap = { version = "4.4.11", features = ["derive"] }
 indicatif = "0.17.7"
 nucleo = "0.2.1"
+nucleo-matcher = "0.2.0"

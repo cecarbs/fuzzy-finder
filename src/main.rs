@@ -1,7 +1,9 @@
 use clap::{Args, Parser, Subcommand};
 // use indicatif::{ProgressBar, ProgressStyle, Style};
 use indicatif::{ProgressBar, ProgressStyle};
-use nucleo::{Matcher, Config};
+use nucleo_matcher::{Config, Matcher};
+// use nucleo::{Matcher, Config};
+use nucleo_matcher::pattern::{CaseMatching, Pattern, Atom, AtomKind};
 use std::fs::{read_dir, DirEntry};
 use std::path::PathBuf;
 use std::u64;
@@ -112,5 +114,36 @@ fn fuzzy_find_dirs_recursive(pattern: &str) -> Vec<String> {
         }
 
     results
+}
+
+// TODO: Utilize the nucleo_matcher (low level crate instead)
+fn example() {
+    // For almost all use cases the Pattern API should be used instead of calling the matcher
+    // methods directly. Pattern::parse will construct a single Atom (a single match operation) for
+    // each word. the pattern can contain special characterst to control what kind of match is
+    // performed (see AtomKind).
+    let paths = ["foo/bar", "bar/foo", "foobar"];
+    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+    let matches = Pattern::parse("foo bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
+
+    assert_eq!(matches, vec![("foo/bar", 168), ("bar/foo", 168), ("foobar", 140)]);
+    let matches = Pattern::parse("^foo, bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
+    assert_eq!(matches, vec![("foo/bar", 168), ("foobar", 140)]);
+
+    // If the pattern should be matched literally (without special parsing) use Pattern::new
+    // instead
+    let paths = ["foo/bar", "bar/foo", "foobar"];
+    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+    let matches = Pattern::new("foo bar", CaseMatching::Ignore, AtomKind::Fuzzy).match_list(paths, &mut matcher);
+    assert_eq!(matches, vec![("foo/bar", 168), ("bar/foo", 168), ("foobar", 140)]);
+    let paths = ["^foo/bar", "bar/^foo", "foobar"];
+    let matches = Pattern::parse("^foo, bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
+    assert_eq!(matches, vec![("foo/bar", 188), ("bar/^foo", 188)]);
+
+    // If word segmentation is also not desired, a single Atom can be constructed directly
+    let paths = ["foobar", "foo bar"];
+    let mut matcher = Matcher::new(Config::DEFAULT);
+    let matches = Atom::new("foo bar", CaseMatching::Ignore, AtomKind::Fuzzy, false).match_list(paths, &mut matcher);
+    assert_eq!(matches, vec![("foo bar", 192)]);
 }
 
