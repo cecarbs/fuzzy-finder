@@ -29,10 +29,13 @@ fn main() {
 
     match cli.command {
         Command::Find { directory } => {
+            // TODO: make sure this starts from root
             let path = PathBuf::from(directory);
             let matcher = Matcher::default();
+            // TODO: change this, should be the search term from the command line
             let search_term = "rust";
 
+            // Progress bar styling
             let progress = ProgressBar::new(0);
             progress.set_style(
                 ProgressStyle::with_template("[{elapsed_precise}] {bar} {pos}/{len}")
@@ -40,6 +43,7 @@ fn main() {
                     .tick_chars("[=>-]"),
             );
 
+            // Initiate search
             progress.set_message(format!(
                 "Searching for '{}' in '{}'...",
                 search_term,
@@ -52,10 +56,13 @@ fn main() {
                 Err(error) => panic!("Error reading directory: {}", error),
             };
 
+            // Progress bar for searching
             progress.set_length(entries.count() as u64);
+
             for entry in entries {
                 progress.inc(1);
 
+                // TODO: search the current directory
                 if let Ok(entry) = entry {
                     let entry_path = entry.path();
                     if matcher.
