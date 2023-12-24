@@ -185,7 +185,7 @@ dependencies = [
  "clap",
  "indicatif",
  "nucleo",
- "nucleo-matcher",
+ "nucleo-matcher 0.2.0",
 ]
 
 [[package]]
@@ -255,11 +255,11 @@ dependencies = [
 
 [[package]]
 name = "nucleo"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae5331f4bcce475cf28cb29c95366c3091af4b0aa7703f1a6bc858f29718fdf3"
+checksum = "d9c28316df514918915799651c5a1cc8f1dd33a9294e1cc22f27fd19453fd62c"
 dependencies = [
- "nucleo-matcher",
+ "nucleo-matcher 0.3.0",
  "parking_lot",
  "rayon",
 ]
@@ -271,6 +271,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b702b402fe286162d1f00b552a046ce74365d2ac473a2607ff36ba650f9bd57"
 dependencies = [
  "cov-mark",
+ "memchr",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "nucleo-matcher"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25040628aa03c6c5e99690990b2493f5a8043e9144ad9a68c933fe4f82f2654d"
+dependencies = [
  "memchr",
  "unicode-segmentation",
 ]
