@@ -1,9 +1,9 @@
 use clap::{Args, Parser, Subcommand};
 // use indicatif::{ProgressBar, ProgressStyle, Style};
 use indicatif::{ProgressBar, ProgressStyle};
-use nucleo_matcher::{Config, Matcher};
-// use nucleo::{Matcher, Config};
-use nucleo_matcher::pattern::{Atom, AtomKind, CaseMatching, Pattern};
+// use nucleo_matcher::{Config, Matcher};
+use nucleo::{Config, Matcher, Settings};
+// use nucleo_matcher::pattern::{Atom, AtomKind, CaseMatching, Pattern};
 use std::fs::{read_dir, DirEntry};
 use std::path::PathBuf;
 use std::u64;
@@ -30,19 +30,20 @@ enum Command {
 // effectively blocking the UI. For such applications the high level
 // `nucleo` crate can be used instead.
 fn main() {
-    let paths = ["foo/bar", "bar/foo", "foobar"];
-    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
-    let matches = Pattern::parse("foo bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
-    println!("matches is {:?}", matches);
+    let query = "apple";
+    let words = vec!["apple", "banana", "cherry", "apricot", "pineapple"];
 
-    assert_eq!(
-        matches,
-        vec![("foo/bar", 168), ("bar/foo", 168), ("foobar", 140)]
-    );
-    // let matches = Pattern::parse("^foo, bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
-    // assert_eq!(matches, vec![("foo/bar", 168), ("foobar", 140)]);
+    // Create a matcher with default settings
+    let matcher = Matcher::new(Settings::default());
+
+    let results = matcher.fuzzy_match(&words, &query);
+
+    // Print the matching results, highlighting matches
+    for (i, result) in results.iter().enumerate() {
+        let highlighted = highlight(&words[i], &query);
+        println!("{}. {}", i + 1, highlighted);
+    }
 }
-
 // fn main() {
 //     let cli = Cli::parse();
 //
@@ -104,6 +105,20 @@ fn main() {
 //     }
 // }
 
+// Helper function to highlight matches
+fn highlight(text: &str, query: &str) -> String {
+    let mut highlighted = String::new();
+    let mut prev_index = 0;
+    for (index, matched) in text.match_indices(query) {
+        highlighted.push_str(&text[prev_index..index]);
+        highlighted.push_str("\x1b[31m"); // Start red highlighting
+        highlighted.push_str(&text[index..index + matched.len()]);
+        highlighted.push_str("\x1b[0m"); // Reset highlighting
+        prev_index = index + matched.len();
+    }
+    highlighted.push_str(&text[prev_index..]);
+    highlighted
+}
 // fn fuzzy_find_dirs_recursive(pattern: &str) -> Vec<String> {
 //     // let config = Config::pattern(pattern).case_sensitive(true);
 //     let config = Config::DEFAULT;
