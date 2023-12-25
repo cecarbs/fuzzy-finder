@@ -12,3 +12,4 @@ nucleo = "0.3.0"
 walkdir = "2.4.0"
 # nucleo = { version = "0.3.0", features = ["*"] }
 nucleo-matcher = "0.3.0"
+dirs = "5.0.1"

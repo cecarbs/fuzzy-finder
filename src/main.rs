@@ -9,6 +9,7 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::u64;
+use walkdir::WalkDir;
 
 #[derive(Parser)]
 struct Cli {
@@ -109,6 +110,21 @@ fn pattern_match_crate() {
         "the matches from the nucleo_matcher crate are: {:?}",
         matches
     );
+}
+
+fn walk_directory() {
+    let home_dir = dirs::home_dir().unwrap();
+
+    let walker = WalkDir::new(home_dir).into_iter();
+
+    for entry in walker {
+        let entry = entry.unwrap();
+        // If the entry is a direcotry
+        if entry.file_type().is_dir() {
+            // print its path in a user-friendly format
+            println!("{}", entry.path().display());
+        }
+    }
 }
 // fn main() {
 //     let cli = Cli::parse();
