@@ -46,7 +46,8 @@ enum Command {
 fn main() {
     // test_with_directories();
 
-    pattern_match_crate();
+    // pattern_match_crate();
+    walk_directory();
 
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
@@ -98,9 +99,10 @@ fn pattern_match_crate() {
 }
 
 fn walk_directory() {
-    let home_dir = dirs::home_dir().unwrap();
+    // let home_dir = dirs::home_dir().unwrap();
+    let projects_dir = dirs::home_dir().unwrap().join("Projects");
 
-    let walker = WalkDir::new(home_dir).into_iter();
+    let walker = WalkDir::new(projects_dir).into_iter();
 
     for entry in walker {
         let entry = entry.unwrap();
