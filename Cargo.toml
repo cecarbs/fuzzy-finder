@@ -10,4 +10,4 @@ clap = { version = "4.4.11", features = ["derive"] }
 indicatif = "0.17.7"
 nucleo = "0.3.0"
 # nucleo = { version = "0.3.0", features = ["*"] }
-nucleo-matcher = "0.2.0"
+# nucleo-matcher = "0.2.0"

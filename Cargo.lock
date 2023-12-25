@@ -128,12 +128,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cov-mark"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ffa3d3e0138386cd4361f63537765cac7ee40698028844635a54495a92f67f3"
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,7 +179,6 @@ dependencies = [
  "clap",
  "indicatif",
  "nucleo",
- "nucleo-matcher 0.2.0",
 ]
 
 [[package]]
@@ -259,20 +252,9 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c28316df514918915799651c5a1cc8f1dd33a9294e1cc22f27fd19453fd62c"
 dependencies = [
- "nucleo-matcher 0.3.0",
+ "nucleo-matcher",
  "parking_lot",
  "rayon",
-]
-
-[[package]]
-name = "nucleo-matcher"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b702b402fe286162d1f00b552a046ce74365d2ac473a2607ff36ba650f9bd57"
-dependencies = [
- "cov-mark",
- "memchr",
- "unicode-segmentation",
 ]
 
 [[package]]

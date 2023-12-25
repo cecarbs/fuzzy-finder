@@ -1,12 +1,9 @@
-#[warn(unused_imports)]
 use clap::{Args, Parser, Subcommand};
 // use indicatif::{ProgressBar, ProgressStyle, Style};
 use indicatif::{ProgressBar, ProgressStyle};
-// use nucleo_matcher::{Config, Matcher};
 use nucleo::{pattern, Config, Matcher};
+use nucleo::{Utf32Str, Utf32String};
 use pattern::{Atom, AtomKind, CaseMatching, Normalization};
-// use nucleo_matcher::pattern::{CaseMatching, Atom};
-// use nucleo_matcher::pattern::{Atom, AtomKind, CaseMatching, Pattern};
 use std::fs::{read_dir, DirEntry};
 use std::path::PathBuf;
 use std::u64;
@@ -44,27 +41,41 @@ enum Command {
 // See AtomKind for the types of Fuzzy, SubString, Prefix, Postfix, Exact
 // https://github.com/helix-editor/nucleo/blob/master/matcher/src/pattern/tests.rs
 fn main() {
-    // let query = "apple"
-    // let paths = ["foo/bar", "bar/foo", "foobar"];
-    // let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
-    // let matches = Pattern::parse("foo bar", CaseMatching::Ignore).match_list(paths, &mut matcher);
-    let words = vec!["apple", "banana", "cherry", "apricot", "pineapple"];
-
     // Create a matcher with default settings
-    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+    let mut nucleo = nucleo::Matcher::new(nucleo::Config::DEFAULT.match_paths());
 
-    let pat = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
-    assert!(pat.negative);
+    // use Atom::Parse for pre-processing
+    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
+    let needle = "apple";
+    assert!(!pat.negative);
     assert_eq!(pat.kind, AtomKind::Fuzzy);
     assert_eq!(pat.needle_text().to_string(), "foo");
 
-    // let results = matcher.fuzzy_match(&words, &query);
+    testing();
 
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
     //     let highlighted = highlight(&words[i], &query);
     //     println!("{}. {}", i + 1, highlighted);
     // }
+}
+fn testing() {
+    let haystack = vec![
+        Utf32String::from("apple"),
+        Utf32String::from("banana"),
+        Utf32String::from("cucumber"),
+        Utf32String::from("dragonfruit"),
+    ];
+    let needle = "banana"; // Intentional typo for demonstration
+
+    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+
+    for word in &haystack {
+        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
+        // black_box(result); // Prevent compiler optimizations
+
+        println!("Match score for '{}': {:?}", word, result);
+    }
 }
 // fn main() {
 //     let cli = Cli::parse();
