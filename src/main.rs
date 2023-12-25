@@ -5,6 +5,7 @@ use nucleo::{pattern, Config, Matcher};
 use nucleo::{Utf32Str, Utf32String};
 use pattern::{Atom, AtomKind, CaseMatching, Normalization};
 use std::fs::{read_dir, DirEntry};
+use std::hint::black_box;
 use std::path::PathBuf;
 use std::u64;
 
@@ -51,7 +52,8 @@ fn main() {
     assert_eq!(pat.kind, AtomKind::Fuzzy);
     assert_eq!(pat.needle_text().to_string(), "foo");
 
-    testing();
+    // testing();
+    test_with_directories();
 
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
@@ -59,20 +61,45 @@ fn main() {
     //     println!("{}. {}", i + 1, highlighted);
     // }
 }
-fn testing() {
+
+fn test_with_directories() {
     let haystack = vec![
-        Utf32String::from("apple"),
-        Utf32String::from("banana"),
-        Utf32String::from("cucumber"),
-        Utf32String::from("dragonfruit"),
+        Utf32String::from("Projects/rust"),
+        Utf32String::from("Projects/javascript"),
+        Utf32String::from("Projects/rust/fuzzy-finder"),
+        Utf32String::from("Projects/python"),
     ];
-    let needle = "banana"; // Intentional typo for demonstration
+
+    let needle = "rust"; // Intentional typo for demonstration
+    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
 
     let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
 
     for word in &haystack {
         let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
-        // black_box(result); // Prevent compiler optimizations
+        black_box(result); // Prevent compiler optimizations
+
+        println!("Match score for '{}': {:?}", word, result);
+    }
+}
+fn testing() {
+    let haystack = vec![
+        Utf32String::from("apple"),
+        Utf32String::from("banana"),
+        Utf32String::from("cucumber"),
+        Utf32String::from("pineapple"),
+        Utf32String::from("dragonfruit"),
+    ];
+    let needle = "apple"; // Intentional typo for demonstration
+    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
+
+    println!("pattern is {:?}", pat);
+
+    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+
+    for word in &haystack {
+        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
+        black_box(result); // Prevent compiler optimizations
 
         println!("Match score for '{}': {:?}", word, result);
     }
