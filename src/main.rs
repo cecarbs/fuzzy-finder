@@ -1,12 +1,13 @@
 use clap::{Args, Parser, Subcommand};
 // use indicatif::{ProgressBar, ProgressStyle, Style};
 use indicatif::{ProgressBar, ProgressStyle};
-use nucleo::{pattern, Config, Matcher};
+use nucleo::{pattern, Config, Matcher, Nucleo};
 use nucleo::{Utf32Str, Utf32String};
 use pattern::{Atom, AtomKind, CaseMatching, Normalization};
 use std::fs::{read_dir, DirEntry};
 use std::hint::black_box;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::u64;
 
 #[derive(Parser)]
@@ -42,18 +43,9 @@ enum Command {
 // See AtomKind for the types of Fuzzy, SubString, Prefix, Postfix, Exact
 // https://github.com/helix-editor/nucleo/blob/master/matcher/src/pattern/tests.rs
 fn main() {
-    // Create a matcher with default settings
-    let mut nucleo = nucleo::Matcher::new(nucleo::Config::DEFAULT.match_paths());
+    // test_with_directories();
 
-    // use Atom::Parse for pre-processing
-    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
-    let needle = "apple";
-    assert!(!pat.negative);
-    assert_eq!(pat.kind, AtomKind::Fuzzy);
-    assert_eq!(pat.needle_text().to_string(), "foo");
-
-    // testing();
-    test_with_directories();
+    pattern_match_crate();
 
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
@@ -62,6 +54,8 @@ fn main() {
     // }
 }
 
+// TODO: THIS IS WHAT IS MEANT BY USING THE HIGH LEVEL nucleo CRATE INSTEAD OF CALLING
+// .match_list()
 fn test_with_directories() {
     let haystack = vec![
         Utf32String::from("Projects/rust"),
@@ -70,7 +64,8 @@ fn test_with_directories() {
         Utf32String::from("Projects/python"),
     ];
 
-    let needle = "rust"; // Intentional typo for demonstration
+    let needle = "rust";
+    // TODO: remove this don't need it, but keep around just in case
     let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
 
     let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
@@ -82,27 +77,38 @@ fn test_with_directories() {
         println!("Match score for '{}': {:?}", word, result);
     }
 }
-fn testing() {
+
+fn pattern_match_crate() {
+    // let paths = ["foo/bar", "bar/foo", "foobar"];
+    // let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
+    // let matches = nucleo_matcher::pattern::Pattern::parse(
+    //     "foo bar",
+    //     CaseMatching::Ignore,
+    //     Normalization::Smart,
+    // )
+    // .match_list(paths, &mut matcher);
+
     let haystack = vec![
-        Utf32String::from("apple"),
-        Utf32String::from("banana"),
-        Utf32String::from("cucumber"),
-        Utf32String::from("pineapple"),
-        Utf32String::from("dragonfruit"),
+        Utf32String::from("Projects/rust"),
+        Utf32String::from("Projects/javascript"),
+        Utf32String::from("Projects/rust/fuzzy-finder"),
+        Utf32String::from("Projects/python"),
     ];
-    let needle = "apple"; // Intentional typo for demonstration
-    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
+    let needle = Utf32String::from("rust");
+    let paths = ["apple, banana, strawberry, pineapple"];
+    let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
+    let matches = nucleo_matcher::pattern::Pattern::parse(
+        "banna",
+        CaseMatching::Ignore,
+        Normalization::Smart,
+    )
+    .match_list(paths, &mut matcher);
 
-    println!("pattern is {:?}", pat);
-
-    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
-
-    for word in &haystack {
-        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
-        black_box(result); // Prevent compiler optimizations
-
-        println!("Match score for '{}': {:?}", word, result);
-    }
+    matcher.fuzzy_match(haystack, needle);
+    println!(
+        "the matches from the nucleo_matcher crate are: {:?}",
+        matches
+    );
 }
 // fn main() {
 //     let cli = Cli::parse();
