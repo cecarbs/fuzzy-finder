@@ -80,32 +80,17 @@ fn test_with_directories() {
 }
 
 fn pattern_match_crate() {
-    // let paths = ["foo/bar", "bar/foo", "foobar"];
-    // let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
-    // let matches = nucleo_matcher::pattern::Pattern::parse(
-    //     "foo bar",
-    //     CaseMatching::Ignore,
-    //     Normalization::Smart,
-    // )
-    // .match_list(paths, &mut matcher);
-
-    let haystack = vec![
-        Utf32String::from("Projects/rust"),
-        Utf32String::from("Projects/javascript"),
-        Utf32String::from("Projects/rust/fuzzy-finder"),
-        Utf32String::from("Projects/python"),
-    ];
-    let needle = Utf32String::from("rust");
-    let paths = ["apple, banana, strawberry, pineapple"];
+    let paths = ["foo/bar", "bar/foo", "foobar"];
     let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
     let matches = nucleo_matcher::pattern::Pattern::parse(
-        "banna",
+        "foo bar",
         CaseMatching::Ignore,
         Normalization::Smart,
     )
     .match_list(paths, &mut matcher);
+    // TODO: use the needle and haystack with the nucleo crate to see if it provices the same
+    // result
 
-    matcher.fuzzy_match(haystack, needle);
     println!(
         "the matches from the nucleo_matcher crate are: {:?}",
         matches
