@@ -32,37 +32,13 @@ fn main() {
     // test_with_directories();
 
     // pattern_match_crate();
-    // walk_directory();
-    walk_directory_and_fuzzy_match_at_end();
+    walk_directory_and_fuzzy_match();
+    // walk_directory_and_fuzzy_match_at_end();
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
     //     let highlighted = highlight(&words[i], &query);
     //     println!("{}. {}", i + 1, highlighted);
     // }
-}
-
-// TODO: THIS IS WHAT IS MEANT BY USING THE HIGH LEVEL nucleo CRATE INSTEAD OF CALLING
-// .match_list()
-fn test_with_directories() {
-    let haystack = vec![
-        Utf32String::from("Projects/rust"),
-        Utf32String::from("Projects/something/rust_analyzer"),
-        Utf32String::from("Projects/rust/fuzzy-finder"),
-        Utf32String::from("Projects/rust/t"),
-        Utf32String::from("Projects/javascript/fuzzy-finder"),
-    ];
-
-    let needle = "rust";
-
-    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
-    // let mut nucleo = nucleo_matcher::Matcher::new(nucleo_matcher::Config::DEFAULT.match_paths());
-
-    for word in &haystack {
-        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
-        black_box(result); // Prevent compiler optimizations
-
-        println!("Match score for '{}': {:?}", word, result);
-    }
 }
 
 fn pattern_match_crate() {
@@ -89,33 +65,13 @@ fn pattern_match_crate() {
     );
 }
 
-fn walk_directory() {
-    let start = Instant::now();
-    // let home_dir = dirs::home_dir().unwrap();
-    let projects_dir = dirs::home_dir().unwrap().join("Projects");
-
-    let walker = WalkDir::new(projects_dir).into_iter();
-
-    for entry in walker {
-        let entry = entry.unwrap();
-        // If the entry is a direcotry
-        if entry.file_type().is_dir() {
-            // print its path in a user-friendly format
-            let path = entry.path().to_str();
-            println!("{}", path.unwrap());
-            // println!("{}", entry.path().display());
-        }
-    }
-    let duration = start.elapsed();
-    println!("Total time: {:?}", duration);
-}
-
 fn walk_directory_and_fuzzy_match() {
     let start = Instant::now();
 
     let projects_dir = dirs::home_dir().unwrap().join("Projects");
-    //
+
     let walker = WalkDir::new(projects_dir).into_iter();
+
     let mut haystack = Vec::new();
     //
     let needle = "rust";
@@ -124,33 +80,26 @@ fn walk_directory_and_fuzzy_match() {
 
         if entry.file_type().is_dir() && entry.file_name().to_str().unwrap() == "rust" {
             let path = entry.path().to_str();
-            haystack.push(Utf32String::from(path.unwrap()));
-            // if path.unwrap().ends_with("rust") {
-            //     haystack.push(Utf32String::from(path.unwrap()));
-            //     continue;
-            // }
-            // let something = entry.path().ends_with()
+            haystack.push(String::from(path.unwrap()));
         }
     }
 
-    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+    let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
 
-    for word in &haystack {
-        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
+    let matches =
+        nucleo_matcher::pattern::Pattern::parse(needle, CaseMatching::Ignore, Normalization::Smart)
+            .match_list(haystack, &mut matcher);
 
-        // println!("Match score for '{:?}': {:?}", word, result);
-        if result.is_some() {
-            let score = result.unwrap();
-            if score > 100 {
-                println!("Path is {:?} and score is {:?}", word, score);
-            }
-        }
-    }
+    println!(
+        "the matches from the nucleo_matcher crate are: {:?}",
+        matches
+    );
 
     let duration = start.elapsed();
     println!("Total time: {:?}", duration);
     // 1.26 seconds to run
 }
+
 fn walk_directory_and_fuzzy_match_at_end() {
     let start = Instant::now();
 
@@ -166,11 +115,6 @@ fn walk_directory_and_fuzzy_match_at_end() {
         if entry.file_type().is_dir() && entry.file_name().to_str().unwrap() == "rust" {
             let path = entry.path().to_str();
             haystack.push(Utf32String::from(path.unwrap()));
-            // if path.unwrap().ends_with("rust") {
-            //     haystack.push(Utf32String::from(path.unwrap()));
-            //     continue;
-            // }
-            // let something = entry.path().ends_with()
         }
     }
 
