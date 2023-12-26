@@ -29,8 +29,7 @@ enum Command {
     },
 }
 fn main() {
-    walk_directory_and_fuzzy_match();
-    // walk_directory_and_fuzzy_match_at_end();
+    walk_directory_and_fuzzy_match_at_end();
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
     //     let highlighted = highlight(&words[i], &query);
@@ -38,41 +37,8 @@ fn main() {
     // }
 }
 
-fn walk_directory_and_fuzzy_match() {
-    let start = Instant::now();
-
-    let projects_dir = dirs::home_dir().unwrap().join("Projects");
-
-    let walker = WalkDir::new(projects_dir).into_iter();
-
-    let mut haystack = Vec::new();
-    //
-    let needle = "rust";
-    for entry in walker {
-        let entry = entry.unwrap();
-
-        if entry.file_type().is_dir() && entry.file_name().to_str().unwrap() == "rust" {
-            let path = entry.path().to_str();
-            haystack.push(String::from(path.unwrap()));
-        }
-    }
-
-    let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
-
-    let matches =
-        nucleo_matcher::pattern::Pattern::parse(needle, CaseMatching::Ignore, Normalization::Smart)
-            .match_list(haystack, &mut matcher);
-
-    println!(
-        "the matches from the nucleo_matcher crate are: {:?}",
-        matches
-    );
-
-    let duration = start.elapsed();
-    println!("Total time: {:?}", duration);
-    // 1.26 seconds to run
-}
-
+// TODO: Utilize 1 fn and have that function take in a directory (if none is passed it defaults to
+// home) and the needle to look for
 fn walk_directory_and_fuzzy_match_at_end() {
     let start = Instant::now();
 
