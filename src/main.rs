@@ -4,13 +4,8 @@ use dirs::home_dir;
 use indicatif::{ProgressBar, ProgressStyle};
 use nucleo::{pattern, Config, Matcher, Nucleo};
 use nucleo::{Utf32Str, Utf32String};
-use pattern::{Atom, AtomKind, CaseMatching, Normalization};
-use std::fs::{read_dir, DirEntry};
-use std::hint::black_box;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::PathBuf;
 use std::time::Instant;
-use std::u64;
 use walkdir::WalkDir;
 
 #[derive(Parser)]
@@ -37,6 +32,49 @@ fn main() {
     // }
 }
 
+fn get_starting_directory(starting_directory: Option<&str>) -> PathBuf {
+    match starting_directory {
+        Some(proj_dir) => dirs::home_dir().unwrap().join(proj_dir),
+        None => dirs::home_dir().unwrap(),
+    }
+}
+fn search_for_directory(
+    starting_directory: Option<&str>,
+    directory_to_search_for: &str,
+) -> Vec<Utf32String> {
+    let directory = get_starting_directory(starting_directory);
+
+    let walker = WalkDir::new(directory).into_iter();
+
+    let mut directories: Vec<Utf32String> = Vec::new();
+
+    for entry in walker {
+        let entry = entry.unwrap();
+
+        if entry.file_type().is_dir()
+            && entry.file_name().to_str().unwrap() == directory_to_search_for
+        {
+            let path = entry.path().to_str();
+            directories.push(Utf32String::from(path.unwrap()));
+        }
+    }
+    directories
+}
+
+fn fuzzy_match_on_search_results(search_term: &str, search_results: Vec<Utf32String>) {
+    let mut nucleo = Matcher::new(Config::DEFAULT.match_paths());
+
+    for path in &search_results {
+        let result = nucleo.fuzzy_match(path.slice(..), Utf32Str::Ascii(search_term.as_bytes()));
+
+        if result.is_some() {
+            let score = result.unwrap();
+            if score > 100 {
+                println!("Path is {:?} and score is {:?}", path, score);
+            }
+        }
+    }
+}
 // TODO: Utilize 1 fn and have that function take in a directory (if none is passed it defaults to
 // home) and the needle to look for
 fn walk_directory_and_fuzzy_match_at_end() {
