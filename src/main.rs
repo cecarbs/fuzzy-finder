@@ -110,29 +110,47 @@ fn walk_directory() {
     println!("Total time: {:?}", duration);
 }
 
-// fn walk_directory_and_fuzzy_match_at_each_path() {
-//     let start = Instant::now();
-//
-//     let projects_dir = dirs::home_dir().unwrap().join("Projects");
-//
-//     let walker = WalkDir::new(projects_dir).into_iter();
-//     let mut haystack = Vec::new();
-//
-//     let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
-//
-//     let needle = "rust";
-//     for entry in walker {
-//         let entry = entry.unwrap();
-//
-//         if entry.file_type().is_dir() {
-//             let path = entry.path().to_str();
-//         }
-//     }
-//
-//     let duration = start.elapsed();
-//     println!("Total time: {:?}", duration);
-//     // 3.5 seconds to run
-// }
+fn walk_directory_and_fuzzy_match() {
+    let start = Instant::now();
+
+    let projects_dir = dirs::home_dir().unwrap().join("Projects");
+    //
+    let walker = WalkDir::new(projects_dir).into_iter();
+    let mut haystack = Vec::new();
+    //
+    let needle = "rust";
+    for entry in walker {
+        let entry = entry.unwrap();
+
+        if entry.file_type().is_dir() && entry.file_name().to_str().unwrap() == "rust" {
+            let path = entry.path().to_str();
+            haystack.push(Utf32String::from(path.unwrap()));
+            // if path.unwrap().ends_with("rust") {
+            //     haystack.push(Utf32String::from(path.unwrap()));
+            //     continue;
+            // }
+            // let something = entry.path().ends_with()
+        }
+    }
+
+    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+
+    for word in &haystack {
+        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
+
+        // println!("Match score for '{:?}': {:?}", word, result);
+        if result.is_some() {
+            let score = result.unwrap();
+            if score > 100 {
+                println!("Path is {:?} and score is {:?}", word, score);
+            }
+        }
+    }
+
+    let duration = start.elapsed();
+    println!("Total time: {:?}", duration);
+    // 1.26 seconds to run
+}
 fn walk_directory_and_fuzzy_match_at_end() {
     let start = Instant::now();
 
@@ -145,7 +163,7 @@ fn walk_directory_and_fuzzy_match_at_end() {
     for entry in walker {
         let entry = entry.unwrap();
 
-        if entry.file_type().is_dir() {
+        if entry.file_type().is_dir() && entry.file_name().to_str().unwrap() == "rust" {
             let path = entry.path().to_str();
             haystack.push(Utf32String::from(path.unwrap()));
             // if path.unwrap().ends_with("rust") {
