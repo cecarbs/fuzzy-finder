@@ -1,4 +1,5 @@
 use clap::{Args, Parser, Subcommand};
+use dirs::home_dir;
 // use indicatif::{ProgressBar, ProgressStyle, Style};
 use indicatif::{ProgressBar, ProgressStyle};
 use nucleo::{pattern, Config, Matcher, Nucleo};
@@ -6,8 +7,9 @@ use nucleo::{Utf32Str, Utf32String};
 use pattern::{Atom, AtomKind, CaseMatching, Normalization};
 use std::fs::{read_dir, DirEntry};
 use std::hint::black_box;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Instant;
 use std::u64;
 use walkdir::WalkDir;
 
@@ -26,29 +28,12 @@ enum Command {
         directory: String,
     },
 }
-// The needle argument for each function must always be normalized by the caller (unicode normalization and case folding).
-// Otherwise, the matcher may fail to produce a match.
-// The pattern modules provides utilities to preprocess needles and should usually be preferred over invoking the matcher directly.
-// Additionally it’s recommend to perform separate matches for each word in the needle.
-// use the following link for the reference to the pattern module:
-// https://github.com/helix-editor/nucleo/blob/master/matcher/src/pattern/tests.rs
-//
-// TODO: Based on the documenation, need to swap to nucelo crate
-// *Note* This function (Pattern:parse(...).match_list(...)) is not recommended for building a full fuzzy
-// matching application that can match large numbers of matches (like all
-// files in a directory) as all matching is done on the current thread,
-// effectively blocking the UI. For such applications the high level
-// `nucleo` crate can be used instead.
-
-// TODO: preprocess the needle using Atom::parse("foo", CaseMatching::Smart, Normalization::Smart)
-// See AtomKind for the types of Fuzzy, SubString, Prefix, Postfix, Exact
-// https://github.com/helix-editor/nucleo/blob/master/matcher/src/pattern/tests.rs
 fn main() {
     // test_with_directories();
 
     // pattern_match_crate();
-    walk_directory();
-
+    // walk_directory();
+    walk_directory_and_fuzzy_match_at_end();
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
     //     let highlighted = highlight(&words[i], &query);
@@ -61,16 +46,16 @@ fn main() {
 fn test_with_directories() {
     let haystack = vec![
         Utf32String::from("Projects/rust"),
-        Utf32String::from("Projects/javascript"),
+        Utf32String::from("Projects/something/rust_analyzer"),
         Utf32String::from("Projects/rust/fuzzy-finder"),
-        Utf32String::from("Projects/python"),
+        Utf32String::from("Projects/rust/t"),
+        Utf32String::from("Projects/javascript/fuzzy-finder"),
     ];
 
     let needle = "rust";
-    // TODO: remove this don't need it, but keep around just in case
-    let pat: Atom = Atom::parse("foo", CaseMatching::Smart, Normalization::Smart);
 
     let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+    // let mut nucleo = nucleo_matcher::Matcher::new(nucleo_matcher::Config::DEFAULT.match_paths());
 
     for word in &haystack {
         let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
@@ -81,16 +66,22 @@ fn test_with_directories() {
 }
 
 fn pattern_match_crate() {
-    let paths = ["foo/bar", "bar/foo", "foobar"];
+    let paths = ["apple", "foo/bar", "bar/foo", "foobar", "banana"];
     let mut matcher = nucleo_matcher::Matcher::new(Config::DEFAULT.match_paths());
+    // let matches = nucleo_matcher::pattern::Pattern::parse(
+    //     "foo bar",
+    //     CaseMatching::Ignore,
+    //     Normalization::Smart,
+    // )
+    // .match_list(paths, &mut matcher);
+    // TODO: use the needle and haystack with the nucleo crate to see if it provices the same
+    // result
     let matches = nucleo_matcher::pattern::Pattern::parse(
         "foo bar",
         CaseMatching::Ignore,
         Normalization::Smart,
     )
     .match_list(paths, &mut matcher);
-    // TODO: use the needle and haystack with the nucleo crate to see if it provices the same
-    // result
 
     println!(
         "the matches from the nucleo_matcher crate are: {:?}",
@@ -99,6 +90,7 @@ fn pattern_match_crate() {
 }
 
 fn walk_directory() {
+    let start = Instant::now();
     // let home_dir = dirs::home_dir().unwrap();
     let projects_dir = dirs::home_dir().unwrap().join("Projects");
 
@@ -109,10 +101,80 @@ fn walk_directory() {
         // If the entry is a direcotry
         if entry.file_type().is_dir() {
             // print its path in a user-friendly format
-            println!("{}", entry.path().display());
+            let path = entry.path().to_str();
+            println!("{}", path.unwrap());
+            // println!("{}", entry.path().display());
         }
     }
+    let duration = start.elapsed();
+    println!("Total time: {:?}", duration);
 }
+
+// fn walk_directory_and_fuzzy_match_at_each_path() {
+//     let start = Instant::now();
+//
+//     let projects_dir = dirs::home_dir().unwrap().join("Projects");
+//
+//     let walker = WalkDir::new(projects_dir).into_iter();
+//     let mut haystack = Vec::new();
+//
+//     let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+//
+//     let needle = "rust";
+//     for entry in walker {
+//         let entry = entry.unwrap();
+//
+//         if entry.file_type().is_dir() {
+//             let path = entry.path().to_str();
+//         }
+//     }
+//
+//     let duration = start.elapsed();
+//     println!("Total time: {:?}", duration);
+//     // 3.5 seconds to run
+// }
+fn walk_directory_and_fuzzy_match_at_end() {
+    let start = Instant::now();
+
+    let projects_dir = dirs::home_dir().unwrap().join("Projects");
+    //
+    let walker = WalkDir::new(projects_dir).into_iter();
+    let mut haystack = Vec::new();
+    //
+    let needle = "rust";
+    for entry in walker {
+        let entry = entry.unwrap();
+
+        if entry.file_type().is_dir() {
+            let path = entry.path().to_str();
+            haystack.push(Utf32String::from(path.unwrap()));
+            // if path.unwrap().ends_with("rust") {
+            //     haystack.push(Utf32String::from(path.unwrap()));
+            //     continue;
+            // }
+            // let something = entry.path().ends_with()
+        }
+    }
+
+    let mut nucleo = Matcher::new(nucleo::Config::DEFAULT.match_paths());
+
+    for word in &haystack {
+        let result = nucleo.fuzzy_match(word.slice(..), Utf32Str::Ascii(needle.as_bytes()));
+
+        // println!("Match score for '{:?}': {:?}", word, result);
+        if result.is_some() {
+            let score = result.unwrap();
+            if score > 100 {
+                println!("Path is {:?} and score is {:?}", word, score);
+            }
+        }
+    }
+
+    let duration = start.elapsed();
+    println!("Total time: {:?}", duration);
+    // 1.26 seconds to run
+}
+
 // fn main() {
 //     let cli = Cli::parse();
 //
