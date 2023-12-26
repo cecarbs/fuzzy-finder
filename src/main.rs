@@ -24,7 +24,14 @@ enum Command {
     },
 }
 fn main() {
-    walk_directory_and_fuzzy_match_at_end();
+    let start = Instant::now();
+    let path = get_starting_directory(Some("Projects"));
+    let directories = search_for_directory(path, "rust");
+    let result = fuzzy_match_on_search_results("rust", directories);
+    println!("Results are {:?}", result);
+    let duration = start.elapsed();
+    println!("Total time: {:?}", duration);
+
     // Print the matching results, highlighting matches
     // for (i, result) in results.iter().enumerate() {
     //     let highlighted = highlight(&words[i], &query);
@@ -39,12 +46,10 @@ fn get_starting_directory(starting_directory: Option<&str>) -> PathBuf {
     }
 }
 fn search_for_directory(
-    starting_directory: Option<&str>,
+    starting_directory: PathBuf,
     directory_to_search_for: &str,
 ) -> Vec<Utf32String> {
-    let directory = get_starting_directory(starting_directory);
-
-    let walker = WalkDir::new(directory).into_iter();
+    let walker = WalkDir::new(starting_directory).into_iter();
 
     let mut directories: Vec<Utf32String> = Vec::new();
 
@@ -61,9 +66,13 @@ fn search_for_directory(
     directories
 }
 
-fn fuzzy_match_on_search_results(search_term: &str, search_results: Vec<Utf32String>) {
+fn fuzzy_match_on_search_results(
+    search_term: &str,
+    search_results: Vec<Utf32String>,
+) -> Vec<Utf32String> {
     let mut nucleo = Matcher::new(Config::DEFAULT.match_paths());
 
+    let mut match_results: Vec<Utf32String> = Vec::new();
     for path in &search_results {
         let result = nucleo.fuzzy_match(path.slice(..), Utf32Str::Ascii(search_term.as_bytes()));
 
@@ -71,10 +80,13 @@ fn fuzzy_match_on_search_results(search_term: &str, search_results: Vec<Utf32Str
             let score = result.unwrap();
             if score > 100 {
                 println!("Path is {:?} and score is {:?}", path, score);
+                match_results.push(path.to_owned());
             }
         }
     }
+    match_results
 }
+
 // TODO: Utilize 1 fn and have that function take in a directory (if none is passed it defaults to
 // home) and the needle to look for
 fn walk_directory_and_fuzzy_match_at_end() {
